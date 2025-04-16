@@ -3,11 +3,13 @@ import streamlit as st
 import pandas as pd
 import io
 
-# Se for um rerun após limpar, inicialize a entrada vazia
+# Inicializar variáveis de estado
 if "entrada" not in st.session_state:
     st.session_state.entrada = ""
 if "limpar" not in st.session_state:
     st.session_state.limpar = False
+if "buscar" not in st.session_state:
+    st.session_state.buscar = False
 
 @st.cache_data(show_spinner=False)
 def carregar_dados():
@@ -47,17 +49,29 @@ with col1:
 with col2:
     tipo_busca = st.selectbox("Tipo de busca:", ["Contém", "Começa com", "Igual"])
 
-# Input de busca
+# Campo de texto
 entrada = st.text_input(f"Digite o {campo_opcao.lower()}", value=st.session_state.entrada).strip().upper()
 
-# Atualizar session_state se não estamos limpando
+# Atualizar entrada
 if not st.session_state.limpar:
     st.session_state.entrada = entrada
+
+# Botão para buscar
+if st.button("🔍 Procurar"):
+    st.session_state.buscar = True
+
+# Botão para limpar busca
+if st.button("🧹 Limpar busca"):
+    st.session_state.entrada = ""
+    st.session_state.buscar = False
+    st.session_state.limpar = True
+    st.rerun()
 
 campo = codigo_col if campo_opcao == "Código" else modelo_col
 resultado = pd.DataFrame()
 
-if st.session_state.entrada and not st.session_state.limpar:
+# Executar busca somente se clicar em "Procurar"
+if st.session_state.entrada and st.session_state.buscar and not st.session_state.limpar:
     if tipo_busca == "Contém":
         resultado = df[df[campo].str.contains(st.session_state.entrada, na=False)]
     elif tipo_busca == "Começa com":
@@ -65,16 +79,11 @@ if st.session_state.entrada and not st.session_state.limpar:
     elif tipo_busca == "Igual":
         resultado = df[df[campo] == st.session_state.entrada]
 
-# Limpar busca com reset total
-if st.button("🧹 Limpar busca"):
-    st.session_state.entrada = ""
-    st.session_state.limpar = True
-    st.rerun()
-
-# Resetar flag após execução
+# Resetar flag de limpar após uso
 if st.session_state.limpar:
     st.session_state.limpar = False
 
+# Mostrar resultado se houver
 if not resultado.empty:
     st.success(f"{len(resultado)} resultado(s) encontrado(s).")
     st.dataframe(resultado)
@@ -86,5 +95,5 @@ if not resultado.empty:
     with pd.ExcelWriter(buffer, engine='openpyxl') as writer:
         resultado.to_excel(writer, index=False, sheet_name="Resultados")
     st.download_button("⬇️ Baixar Excel", data=buffer.getvalue(), file_name="resultado.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
-elif st.session_state.entrada:
+elif st.session_state.buscar and st.session_state.entrada:
     st.warning("Nenhum resultado encontrado.")
