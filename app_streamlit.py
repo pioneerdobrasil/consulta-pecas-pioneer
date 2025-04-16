@@ -3,9 +3,11 @@ import streamlit as st
 import pandas as pd
 import io
 
-# Inicializar estado da busca se necessário
-if "busca" not in st.session_state:
-    st.session_state.busca = ""
+# Se for um rerun após limpar, inicialize a entrada vazia
+if "entrada" not in st.session_state:
+    st.session_state.entrada = ""
+if "limpar" not in st.session_state:
+    st.session_state.limpar = False
 
 @st.cache_data(show_spinner=False)
 def carregar_dados():
@@ -45,28 +47,33 @@ with col1:
 with col2:
     tipo_busca = st.selectbox("Tipo de busca:", ["Contém", "Começa com", "Igual"])
 
-# Input com estado
-entrada = st.text_input(f"Digite o {campo_opcao.lower()}", value=st.session_state.busca).strip().upper()
+# Input de busca
+entrada = st.text_input(f"Digite o {campo_opcao.lower()}", value=st.session_state.entrada).strip().upper()
 
-# Salva nova entrada (caso digitada manualmente)
-if entrada != st.session_state.busca:
-    st.session_state.busca = entrada
+# Atualizar session_state se não estamos limpando
+if not st.session_state.limpar:
+    st.session_state.entrada = entrada
 
 campo = codigo_col if campo_opcao == "Código" else modelo_col
 resultado = pd.DataFrame()
 
-if st.session_state.busca:
+if st.session_state.entrada and not st.session_state.limpar:
     if tipo_busca == "Contém":
-        resultado = df[df[campo].str.contains(st.session_state.busca, na=False)]
+        resultado = df[df[campo].str.contains(st.session_state.entrada, na=False)]
     elif tipo_busca == "Começa com":
-        resultado = df[df[campo].str.startswith(st.session_state.busca)]
+        resultado = df[df[campo].str.startswith(st.session_state.entrada)]
     elif tipo_busca == "Igual":
-        resultado = df[df[campo] == st.session_state.busca]
+        resultado = df[df[campo] == st.session_state.entrada]
 
-# Botão para limpar busca de forma funcional
+# Limpar busca com reset total
 if st.button("🧹 Limpar busca"):
-    st.session_state.busca = ""
+    st.session_state.entrada = ""
+    st.session_state.limpar = True
     st.rerun()
+
+# Resetar flag após execução
+if st.session_state.limpar:
+    st.session_state.limpar = False
 
 if not resultado.empty:
     st.success(f"{len(resultado)} resultado(s) encontrado(s).")
@@ -79,5 +86,5 @@ if not resultado.empty:
     with pd.ExcelWriter(buffer, engine='openpyxl') as writer:
         resultado.to_excel(writer, index=False, sheet_name="Resultados")
     st.download_button("⬇️ Baixar Excel", data=buffer.getvalue(), file_name="resultado.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
-elif st.session_state.busca:
+elif st.session_state.entrada:
     st.warning("Nenhum resultado encontrado.")
