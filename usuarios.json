@@ -1,0 +1,14 @@
+{
+    "admin": {
+        "senha": "admin123",
+        "nome": "Administrador"
+    },
+    "tecnico01": {
+        "senha": "suporte456",
+        "nome": "Técnico de Suporte"
+    },
+    "ivo": {
+        "senha": "pioneer2024",
+        "nome": "Ivo - Supervisor Técnico"
+    }
+}
