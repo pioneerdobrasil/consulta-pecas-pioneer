@@ -2,55 +2,66 @@
 import streamlit as st
 import pandas as pd
 
-st.set_page_config(layout="wide")
+# Configuração da página
+st.set_page_config(page_title="Consulta de Peças - Pioneer", layout="wide")
 
-# Logo e título centralizados
-col1, col2, col3 = st.columns([1, 5, 1])
-with col1:
-    st.image("logo_pioneer_240px.png", width=180)
-with col2:
-    st.markdown("<h1 style='text-align: center;'>Consulta de Peças e Modelos - Pioneer</h1>", unsafe_allow_html=True)
-
-# Inicializa estado de busca
-if "resultados" not in st.session_state:
-    st.session_state.resultados = pd.DataFrame()
-if "colunas" not in st.session_state:
-    st.session_state.colunas = []
-
-# Upload e recarregamento do banco de dados
+# Função para carregar dados com cache
 @st.cache_data
 def carregar_dados():
     return pd.read_excel("Referência_Cruzada_2_Atualizada.xlsx")
 
+# Layout do cabeçalho com imagem
+col_logo, col_titulo = st.columns([1, 8])
+with col_logo:
+    st.image("logo_pioneer_240px.png", width=180)
+with col_titulo:
+    st.markdown("<h1 style='text-align: center;'>Consulta de Peças e Modelos - Pioneer</h1>", unsafe_allow_html=True)
+
+# Carregamento do DataFrame
 df = carregar_dados()
-st.session_state.colunas = df.columns.tolist()
 
-# Interface de busca
-st.sidebar.markdown("### 📑 Colunas detectadas:")
-for c in st.session_state.colunas:
-    st.sidebar.markdown(f"- {c}")
+# Exibir colunas detectadas
+with st.sidebar:
+    st.markdown("### 🧾 Colunas detectadas:")
+    for col in df.columns:
+        st.markdown(f"- {col}")
 
-tipo_busca = st.selectbox("Buscar por:", options=df.columns)
-modo_busca = st.selectbox("Tipo de busca:", options=["Igual", "Contém"])
-entrada = st.text_input("Digite o código")
-
-col1, col2 = st.columns([1, 1])
+# Filtros de busca
+col1, col2 = st.columns(2)
 with col1:
-    if st.button("🔍 Procurar"):
-        if entrada:
-            if modo_busca == "Contém":
-                resultados = df[df[tipo_busca].astype(str).str.contains(entrada, case=False, na=False)]
-            else:
-                resultados = df[df[tipo_busca].astype(str).str.lower() == entrada.lower()]
-            st.session_state.resultados = resultados
+    campo = st.selectbox("Buscar por:", df.columns.tolist(), index=0)
 with col2:
-    if st.button("🧹 Limpar busca"):
-        st.session_state.resultados = pd.DataFrame()
-        st.experimental_rerun()
+    tipo_busca = st.selectbox("Tipo de busca:", ["Contém", "Igual", "Inicia com", "Termina com"], index=0)
 
-# Exibição
-if not st.session_state.resultados.empty:
-    st.success(f"{len(st.session_state.resultados)} resultado(s) encontrado(s).")
-    st.dataframe(st.session_state.resultados, use_container_width=True)
-    st.download_button("📄 Baixar CSV", st.session_state.resultados.to_csv(index=False), "resultado.csv", "text/csv")
-    st.download_button("📊 Baixar Excel", st.session_state.resultados.to_excel(index=False, engine="openpyxl"), "resultado.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+# Campo de entrada de texto
+texto_busca = st.text_input(f"Digite o {campo.lower()}")
+
+# Botões de ação
+col_botao1, col_botao2 = st.columns([1, 6])
+buscar = col_botao1.button("🔍 Procurar")
+limpar = col_botao2.button("🧹 Limpar busca")
+
+# Ações dos botões
+if buscar and texto_busca:
+    if tipo_busca == "Contém":
+        resultado = df[df[campo].astype(str).str.contains(texto_busca, case=False, na=False)]
+    elif tipo_busca == "Igual":
+        resultado = df[df[campo].astype(str).str.lower() == texto_busca.lower()]
+    elif tipo_busca == "Inicia com":
+        resultado = df[df[campo].astype(str).str.startswith(texto_busca)]
+    elif tipo_busca == "Termina com":
+        resultado = df[df[campo].astype(str).str.endswith(texto_busca)]
+    else:
+        resultado = pd.DataFrame()
+    
+    st.success(f"{len(resultado)} resultado(s) encontrado(s).")
+    st.dataframe(resultado, use_container_width=True)
+    
+    if not resultado.empty:
+        col3, col4 = st.columns(2)
+        with col3:
+            st.download_button("📄 Baixar CSV", resultado.to_csv(index=False).encode('utf-8'), "resultado.csv", "text/csv")
+        with col4:
+            st.download_button("📊 Baixar Excel", resultado.to_excel(index=False, engine="openpyxl"), "resultado.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+elif limpar:
+    st.experimental_rerun()
