@@ -5,7 +5,13 @@ import io
 
 @st.cache_data(show_spinner=False)
 def carregar_dados():
-    return pd.read_excel("Referência_Cruzada_2_Atualizada.xlsx")
+    df = pd.read_excel("Referência_Cruzada_2_Atualizada.xlsx")
+
+    # Normalização para evitar problemas de busca
+    df["Código"] = df["Código"].astype(str).str.strip().str.upper()
+    df["Modelo"] = df["Modelo"].astype(str).str.strip().str.upper()
+
+    return df
 
 st.title("Consulta de Peças e Modelos - Pioneer")
 
@@ -20,16 +26,16 @@ with col1:
 with col2:
     tipo_busca = st.selectbox("Tipo de busca:", ["Contém", "Começa com", "Igual"])
 
-entrada = st.text_input(f"Digite o {campo.lower()}").strip()
+entrada = st.text_input(f"Digite o {campo.lower()}").strip().upper()
 
 resultado = pd.DataFrame()
 if entrada:
     if tipo_busca == "Contém":
-        resultado = df[df[campo].astype(str).str.contains(entrada, case=False, na=False)]
+        resultado = df[df[campo].str.contains(entrada, case=False, na=False)]
     elif tipo_busca == "Começa com":
-        resultado = df[df[campo].astype(str).str.startswith(entrada)]
+        resultado = df[df[campo].str.startswith(entrada)]
     elif tipo_busca == "Igual":
-        resultado = df[df[campo].astype(str).str.lower() == entrada.lower()]
+        resultado = df[df[campo] == entrada]
 
 if st.button("🧹 Limpar busca"):
     st.experimental_rerun()
