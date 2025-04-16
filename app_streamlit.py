@@ -9,7 +9,7 @@ st.set_page_config(page_title="Consulta Pioneer", page_icon="📦", layout="wide
 # ---------- LOGO ----------
 col_logo, col_titulo = st.columns([1, 6])
 with col_logo:
-    st.image("logotipo_pioneer_pantone201C.png", use_column_width="always")
+    st.image("logotipo_pioneer_pantone201C.png", use_container_width=True)
 with col_titulo:
     st.markdown("## Consulta de Peças e Modelos - Pioneer")
 
