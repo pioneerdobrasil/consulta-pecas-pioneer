@@ -6,9 +6,12 @@ import io
 # ---------- CONFIGURAÇÕES DE PÁGINA ----------
 st.set_page_config(page_title="Consulta Pioneer", page_icon="📦", layout="wide")
 
-# ---------- LOGO NO TOPO ----------
-st.image("logotipo_pioneer_pantone201C.png", use_container_width=True)
-st.markdown("## Consulta de Peças e Modelos - Pioneer")
+# ---------- LOGO E TÍTULO ----------
+col_logo, col_titulo = st.columns([1, 6])
+with col_logo:
+    st.image("logotipo_pioneer_pantone201C.png", use_container_width=True)
+with col_titulo:
+    st.markdown("<div style='padding-top: 30px; text-align: center; font-size: 26px; font-weight: bold;'>Consulta de Peças e Modelos - Pioneer</div>", unsafe_allow_html=True)
 
 # ---------- SESSION STATE ----------
 if "entrada" not in st.session_state:
