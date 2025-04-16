@@ -32,7 +32,6 @@ def main_app():
     st.image("logo_pioneer_240px.png", width=150)
     st.markdown("<h1 style='text-align: center;'>Consulta de Peças e Modelos - Pioneer</h1>", unsafe_allow_html=True)
     
-    # Carregamento simulado do DataFrame (substitua com seu carregamento real)
     try:
         df = pd.read_excel("Referência_Cruzada_2_Atualizada.xlsx")
     except FileNotFoundError:
@@ -60,7 +59,7 @@ def main_app():
                     resultado = pd.DataFrame()
                 if not resultado.empty:
                     st.success(f"{len(resultado)} resultado(s) encontrado(s).")
-                    st.dataframe(resultado, use_container_width=True)
+                    st.dataframe(resultado, use_container_width=True, hide_index=True)
                 else:
                     st.warning("Nenhum resultado encontrado.")
             else:
