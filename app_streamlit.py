@@ -41,7 +41,7 @@ buscar = col1.button("🔍 Procurar")
 limpar = col2.button("🖉 Limpar busca")
 
 if limpar:
-    st.experimental_rerun()
+    st.rerun()
 
 if buscar and texto_busca:
     texto_busca = remover_acentos(texto_busca).lower()
