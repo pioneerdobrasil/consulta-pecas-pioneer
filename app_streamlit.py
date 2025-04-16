@@ -7,21 +7,18 @@ import io
 def carregar_dados():
     df = pd.read_excel("Referência_Cruzada_2_Atualizada.xlsx")
 
-    # Mostrar colunas para depuração
     st.sidebar.subheader("🧪 Colunas detectadas:")
     for col in df.columns:
         st.sidebar.write("-", col)
 
-    # Padronizar colunas
     df.columns = df.columns.str.strip().str.lower()
 
-    # Renomear coluna 'código' e 'modelo' se encontradas
     codigo_col = next((col for col in df.columns if "código" in col), None)
     modelo_col = next((col for col in df.columns if "modelo" in col), None)
 
     if not codigo_col or not modelo_col:
         st.error("As colunas 'Código' ou 'Modelo' não foram encontradas.")
-        return pd.DataFrame()
+        return pd.DataFrame(), None, None
 
     df[codigo_col] = df[codigo_col].astype(str).str.strip().str.upper()
     df[modelo_col] = df[modelo_col].astype(str).str.strip().str.upper()
@@ -57,7 +54,7 @@ if entrada:
         resultado = df[df[campo] == entrada]
 
 if st.button("🧹 Limpar busca"):
-    st.experimental_rerun()
+    st.rerun()
 
 if not resultado.empty:
     st.success(f"{len(resultado)} resultado(s) encontrado(s).")
