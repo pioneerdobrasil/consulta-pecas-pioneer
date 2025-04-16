@@ -3,6 +3,10 @@ import streamlit as st
 import pandas as pd
 import io
 
+# Inicializar estado da busca se necessário
+if "busca" not in st.session_state:
+    st.session_state.busca = ""
+
 @st.cache_data(show_spinner=False)
 def carregar_dados():
     df = pd.read_excel("Referência_Cruzada_2_Atualizada.xlsx")
@@ -41,19 +45,27 @@ with col1:
 with col2:
     tipo_busca = st.selectbox("Tipo de busca:", ["Contém", "Começa com", "Igual"])
 
-entrada = st.text_input(f"Digite o {campo_opcao.lower()}").strip().upper()
+# Input com estado
+entrada = st.text_input(f"Digite o {campo_opcao.lower()}", value=st.session_state.busca).strip().upper()
+
+# Salva nova entrada (caso digitada manualmente)
+if entrada != st.session_state.busca:
+    st.session_state.busca = entrada
 
 campo = codigo_col if campo_opcao == "Código" else modelo_col
 resultado = pd.DataFrame()
-if entrada:
-    if tipo_busca == "Contém":
-        resultado = df[df[campo].str.contains(entrada, na=False)]
-    elif tipo_busca == "Começa com":
-        resultado = df[df[campo].str.startswith(entrada)]
-    elif tipo_busca == "Igual":
-        resultado = df[df[campo] == entrada]
 
+if st.session_state.busca:
+    if tipo_busca == "Contém":
+        resultado = df[df[campo].str.contains(st.session_state.busca, na=False)]
+    elif tipo_busca == "Começa com":
+        resultado = df[df[campo].str.startswith(st.session_state.busca)]
+    elif tipo_busca == "Igual":
+        resultado = df[df[campo] == st.session_state.busca]
+
+# Botão para limpar busca de forma funcional
 if st.button("🧹 Limpar busca"):
+    st.session_state.busca = ""
     st.rerun()
 
 if not resultado.empty:
@@ -67,5 +79,5 @@ if not resultado.empty:
     with pd.ExcelWriter(buffer, engine='openpyxl') as writer:
         resultado.to_excel(writer, index=False, sheet_name="Resultados")
     st.download_button("⬇️ Baixar Excel", data=buffer.getvalue(), file_name="resultado.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
-elif entrada:
+elif st.session_state.busca:
     st.warning("Nenhum resultado encontrado.")
