@@ -2,71 +2,52 @@
 import streamlit as st
 import pandas as pd
 
-# Centralizar conteúdo e remover menu/hambúrguer
-st.set_page_config(page_title="Consulta de Peças e Modelos", layout="wide", page_icon="🔍")
+st.set_page_config(layout="wide")
 
-# Ocultar elementos padrão do Streamlit
-hide_st_style = '''
-<style>
-#MainMenu {visibility: hidden;}
-footer {visibility: hidden;}
-header {visibility: hidden;}
-</style>
-'''
-st.markdown(hide_st_style, unsafe_allow_html=True)
+# Logo (carregando diretamente do GitHub)
+st.image("https://raw.githubusercontent.com/pioneerdobrasil/consulta-pecas-pioneer/main/logo.png", width=180)
 
-# Layout da logo e título
-col_logo, col_title, _ = st.columns([1, 3, 1])
-with col_logo:
-    st.image("logo.png", width=180)
-with col_title:
-    st.markdown("## Consulta de Peças e Modelos - Pioneer")
+# Título
+st.markdown("<h1 style='text-align: center; margin-top: -20px;'>Consulta de Peças e Modelos - Pioneer</h1>", unsafe_allow_html=True)
 
-# Carregamento dos dados
+# Upload do Excel (oculto)
 @st.cache_data
 def carregar_dados():
     return pd.read_excel("Referência_Cruzada_2_Atualizada.xlsx")
 
 df = carregar_dados()
 
-# Lateral com colunas detectadas
-with st.sidebar:
-    st.markdown("### 🗂️ Colunas detectadas:")
-    for col in df.columns:
-        st.markdown(f"- {col}")
+# Layout lateral
+st.sidebar.subheader("📑 Colunas detectadas:")
+for coluna in df.columns:
+    st.sidebar.markdown(f"- {coluna}")
 
-# Filtros de busca
-col1, col2 = st.columns([1, 3])
-opcoes_coluna = df.columns.tolist()
+# Interface de busca
+col1, col2 = st.columns([1, 1])
+coluna_busca = col1.selectbox("Buscar por:", df.columns)
+tipo_busca = col2.selectbox("Tipo de busca:", ["Contém", "Igual"])
 
-with col1:
-    coluna = st.selectbox("Buscar por:", opcoes_coluna)
-with col2:
-    tipo_busca = st.selectbox("Tipo de busca:", ["Contém", "Igual"])
+valor_busca = st.text_input("Digite o código")
 
-valor = st.text_input("Digite o código")
+col3, col4 = st.columns([1, 1])
+buscar = col3.button("🔍 Procurar")
+limpar = col4.button("🧹 Limpar busca")
 
-# Botões
-col_buscar, col_limpar = st.columns([1, 1])
-buscar = col_buscar.button("🔍 Procurar")
-limpar = col_limpar.button("🧹 Limpar busca")
-
-# Execução da busca
-if buscar and valor:
+# Lógica de busca
+resultado = pd.DataFrame()
+if buscar:
     if tipo_busca == "Contém":
-        resultado = df[df[coluna].astype(str).str.contains(valor, case=False, na=False)]
-    else:
-        resultado = df[df[coluna].astype(str).str.lower() == valor.lower()]
+        resultado = df[df[coluna_busca].astype(str).str.contains(valor_busca, case=False, na=False)]
+    elif tipo_busca == "Igual":
+        resultado = df[df[coluna_busca].astype(str) == valor_busca]
 
-    qtd = len(resultado)
-    st.success(f"{qtd} resultado(s) encontrado(s).")
+# Exibe resultado
+if not resultado.empty:
+    st.success(f"{len(resultado)} resultado(s) encontrado(s).")
     st.dataframe(resultado, use_container_width=True)
+elif buscar:
+    st.warning("Nenhum resultado encontrado.")
 
-    # Exportar resultados
-    col_export1, col_export2 = st.columns([1, 1])
-    col_export1.download_button("⬇️ Baixar CSV", data=resultado.to_csv(index=False).encode("utf-8"), file_name="resultado.csv", mime="text/csv")
-    col_export2.download_button("⬇️ Baixar Excel", data=resultado.to_excel(index=False, engine="openpyxl"), file_name="resultado.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
-
-# Limpar filtros
+# Botão para limpar busca
 if limpar:
     st.rerun()
