@@ -7,11 +7,8 @@ import io
 st.set_page_config(page_title="Consulta Pioneer", page_icon="📦", layout="wide")
 
 # ---------- LOGO E TÍTULO ----------
-col_logo, col_titulo = st.columns([1, 6])
-with col_logo:
-    st.image("logotipo_pioneer_pantone201C.png", use_container_width=True)
-with col_titulo:
-    st.markdown("<div style='padding-top: 30px; text-align: center; font-size: 26px; font-weight: bold;'>Consulta de Peças e Modelos - Pioneer</div>", unsafe_allow_html=True)
+st.image("logotipo_pioneer_pantone201C.png", width=180)
+st.markdown("<h2 style='text-align: center; margin-top: -20px;'>Consulta de Peças e Modelos - Pioneer</h2>", unsafe_allow_html=True)
 
 # ---------- SESSION STATE ----------
 if "entrada" not in st.session_state:
