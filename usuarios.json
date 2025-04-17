@@ -1,1 +1,8 @@
-{"Administrador": "1234", "ivo": "senha_segura"}
+{
+    "Administrador": {
+        "senha": "admin123"
+    },
+    "ivo": {
+        "senha": "senha123"
+    }
+}
