@@ -1,8 +1,4 @@
 {
-    "Administrador": {
-        "senha": "admin123"
-    },
-    "ivo": {
-        "senha": "senha123"
-    }
+  "ivo": "senha123",
+  "admin": "admin123"
 }
