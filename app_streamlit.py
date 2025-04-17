@@ -2,60 +2,71 @@
 import streamlit as st
 import pandas as pd
 import json
+import hashlib
 
-# Função para autenticar usuário
+# --- Funções de autenticação ---
+def carregar_usuarios():
+    with open("usuarios.json", "r") as f:
+        return json.load(f)
+
 def autenticar_usuario(usuario, senha):
-    try:
-        with open("usuarios.json", "r") as f:
-            usuarios = json.load(f)
-        return usuarios.get(usuario) == senha
-    except FileNotFoundError:
-        return False
+    usuarios = carregar_usuarios()
+    senha_hash = hashlib.sha256(senha.encode()).hexdigest()
+    return usuarios.get(usuario) == senha_hash
 
-# Função principal da aplicação
+def login():
+    st.image("logo_pioneer_240px.png", width=120)
+    st.title("Login")
+
+    usuario = st.text_input("Usuário")
+    senha = st.text_input("Senha", type="password")
+
+    if st.button("Entrar"):
+        if autenticar_usuario(usuario, senha):
+            st.session_state["autenticado"] = True
+            st.session_state["usuario"] = usuario
+            st.rerun()
+        else:
+            st.error("Usuário ou senha inválidos.")
+
+# --- Função principal ---
 def main():
-    if "autenticado" not in st.session_state:
-        st.session_state.autenticado = False
+    st.image("logo_pioneer_240px.png", width=120)
+    st.markdown("<h1 style='text-align: center;'>Consulta de Peças e Modelos - Pioneer</h1>", unsafe_allow_html=True)
 
-    if not st.session_state.autenticado:
-        st.image("logo_pioneer_240px.png", width=120)
-        st.title("Login")
-        usuario = st.text_input("Usuário")
-        senha = st.text_input("Senha", type="password")
-        if st.button("Entrar"):
-            if autenticar_usuario(usuario, senha):
-                st.session_state.autenticado = True
-                st.rerun()
-            else:
-                st.error("Usuário ou senha incorretos.")
-    else:
-        st.image("logo_pioneer_240px.png", width=120)
-        st.markdown("<h1 style='text-align: center;'>Consulta de Peças e Modelos - Pioneer</h1>", unsafe_allow_html=True)
+    df = pd.read_excel("Referência_Cruzada_2_Atualizada.xlsx")
 
-        # Filtros
-        opcao_busca = st.selectbox("Buscar por:", ["Código", "Modelo"])
-        tipo_busca = st.selectbox("Tipo de busca:", ["Contém", "Igual"])
-        termo = st.text_input("Digite o código")
+    col1, col2 = st.columns(2)
+    with col1:
+        filtro_coluna = st.selectbox("Buscar por:", df.columns.tolist())
+    with col2:
+        tipo_busca = st.selectbox("Tipo de busca:", ["Contém", "Igual", "Começa com"])
 
+    valor_busca = st.text_input("Digite o código")
+
+    col3, col4 = st.columns([1, 5])
+    with col3:
         if st.button("🔍 Procurar"):
-            try:
-                df = pd.read_excel("Estoque_20250414.xlsx")
-                coluna = "Código" if opcao_busca == "Código" else "Modelo"
-                if tipo_busca == "Contém":
-                    resultado = df[df[coluna].astype(str).str.contains(termo, case=False, na=False)]
-                else:
-                    resultado = df[df[coluna].astype(str) == termo]
-                if not resultado.empty:
-                    st.success(f"{len(resultado)} resultado(s) encontrado(s).")
-                    st.dataframe(resultado, use_container_width=True)
-                else:
-                    st.warning("Nenhum resultado encontrado.")
-            except Exception as e:
-                st.error(f"Erro ao carregar os dados: {e}")
+            if tipo_busca == "Contém":
+                resultado = df[df[filtro_coluna].astype(str).str.contains(valor_busca, case=False, na=False)]
+            elif tipo_busca == "Igual":
+                resultado = df[df[filtro_coluna].astype(str) == valor_busca]
+            elif tipo_busca == "Começa com":
+                resultado = df[df[filtro_coluna].astype(str).str.startswith(valor_busca)]
+            else:
+                resultado = pd.DataFrame()
 
-        if st.button("🪄 Limpar busca"):
-            st.session_state.clear()
+            if not resultado.empty:
+                st.success(f"{len(resultado)} resultado(s) encontrado(s).")
+                st.dataframe(resultado, use_container_width=True)
+            else:
+                st.warning("Nenhum resultado encontrado.")
+    with col4:
+        if st.button("🧹 Limpar busca"):
             st.rerun()
 
-if __name__ == "__main__":
+# --- Execução ---
+if "autenticado" not in st.session_state or not st.session_state["autenticado"]:
+    login()
+else:
     main()
